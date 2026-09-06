@@ -1,0 +1,68 @@
+services:
+  ollama:
+    image: ollama/ollama:${OLLAMA_VERSION}
+    container_name: ollama
+    restart: always
+    security_opt:
+      - no-new-privileges=true
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - ai_network
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${OPEN_WEBUI_VERSION}
+    container_name: open-webui
+    restart: always
+    security_opt:
+      - no-new-privileges=true
+    environment:
+      - 'OLLAMA_BASE_URL=http://ollama:11434'
+      - 'WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}'
+    volumes:
+      - open-webui-data:/app/backend/data
+    depends_on:
+      - ollama
+    networks:
+      - ai_network
+
+    # ========================================================
+    # OPTION A: LOCAL DEPLOYMENT (NO TRAEFIK)
+    # Uncomment the 'ports' block below to access via IP:PORT.
+    # Be sure to comment out the OPTION B 'labels' block below.
+    # ========================================================
+    # ports:
+    #   - "${WEBUI_LOCAL_PORT}:8080"
+
+    # ========================================================
+    # OPTION B: TRAEFIK DEPLOYMENT
+    # Comment out this 'labels' block if using Option A above.
+    # ========================================================
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.open-webui.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.open-webui.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.open-webui.tls=true"
+      - "traefik.http.routers.open-webui.tls.certresolver=${TRAEFIK_CERTRESOLVER}"
+      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+
+networks:
+  # ========================================================
+  # OPTION A: LOCAL DEPLOYMENT (NO TRAEFIK)
+  # Uncomment the 2 lines below to create an isolated local network.
+  # Be sure to comment out the OPTION B lines below.
+  # ========================================================
+  # ai_network:
+  #   driver: bridge
+
+  # ========================================================
+  # OPTION B: TRAEFIK DEPLOYMENT
+  # Comment out the 3 lines below if using Option A above.
+  # ========================================================
+  ai_network:
+    name: ${TRAEFIK_NETWORK}
+    external: true 
+
+volumes:
+  ollama-data:
+  open-webui-data:
