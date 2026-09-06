@@ -1,0 +1,11 @@
+# Secrets — never commit real values; the committed template is .env.example
+.env
+.env.*
+!.env.example
+
+# Local Compose state / logs
+docker-compose.override.yaml
+*.log
+
+# OS / editor noise
+.DS_Store
